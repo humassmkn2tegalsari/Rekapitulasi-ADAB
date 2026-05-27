@@ -90,7 +90,7 @@
         .timeline-item.negative::before { background: #ef4444; }
         
         /* Chart container */
-        .chart-wrapper { position: relative; height: 350px; width: 100%; }
+        .chart-wrapper { position: relative; height: 400px; width: 100%; }
         
         /* Toggle button active state */
         .toggle-btn.active {
@@ -100,13 +100,18 @@
         }
         
         /* Stat card hover */
-        .stat-card {
-            transition: all 0.3s ease;
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.06); }
+        
+        /* Legend badge */
+        .legend-badge { 
+            display: inline-flex; align-items: center; gap: 0.35rem; 
+            padding: 0.25rem 0.75rem; border-radius: 9999px; 
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; 
+            text-transform: uppercase; 
         }
-        .stat-card:hover {
-            transform: translateY(-2px);
-            background: rgba(255,255,255,0.06);
-        }
+        .legend-badge.pos { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .legend-badge.neg { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -143,7 +148,7 @@
             <i data-lucide="table" class="w-3.5 h-3.5"></i> Data Tabel
         </button>
         <button onclick="switchView('analytics')" id="btnViewAnalytics" class="toggle-btn px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition hover:bg-white/10">
-            <i data-lucide="circle-help" class="w-3.5 h-3.5"></i> Analitik Grafik
+            <i data-lucide="circle-help" class="w-3.5 h-3.5"></i> Analitik Per Jurusan
         </button>
     </div>
 
@@ -206,18 +211,17 @@
         </div>
     </div>
 
-    <!-- ===== VIEW: ANALYTICS ===== -->
+    <!-- ===== VIEW: ANALYTICS (KELAS → JURUSAN) ===== -->
     <div id="viewAnalytics" class="hidden space-y-6">
-        <!-- Analytics Controls - HANYA FILTER KELAS -->
+        <!-- Analytics Controls - FILTER KELAS SAJA -->
         <div class="glass rounded-3xl p-5">
             <div class="flex flex-col md:flex-row justify-between items-end gap-4">
                 <div>
-                    <h3 class="text-lg font-bold tracking-tight mb-1">Visualisasi Data per Kelas</h3>
-                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Pilih kelas untuk melihat distribusi poin</p>
+                    <h3 class="text-lg font-bold tracking-tight mb-1">Perbandingan Poin per Jurusan</h3>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Pilih kelas untuk melihat performa tiap jurusan</p>
                 </div>
                 <div class="flex gap-3">
-                    <!-- Hanya filter kelas untuk analytics -->
-                    <select id="chartFilterKelas" onchange="renderChart()" class="input-glass rounded-2xl px-4 py-3 text-sm min-w-[200px]">
+                    <select id="chartFilterKelas" onchange="renderChart()" class="input-glass rounded-2xl px-4 py-3 text-sm min-w-[220px]">
                         <option value="">Semua Kelas</option>
                     </select>
                 </div>
@@ -226,11 +230,11 @@
 
         <!-- Chart Card -->
         <div class="glass rounded-3xl p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-sm font-bold uppercase tracking-widest opacity-60">Distribusi Poin Positif & Negatif</h4>
-                <div class="flex items-center gap-4 text-[10px]">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-green-400"></span> Positif</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-400"></span> Negatif</span>
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
+                <h4 class="text-sm font-bold uppercase tracking-widest opacity-60">Distribusi Poin Positif & Negatif per Jurusan</h4>
+                <div class="flex items-center gap-3">
+                    <span class="legend-badge pos"><span class="w-2.5 h-2.5 rounded-full bg-green-400"></span> Positif</span>
+                    <span class="legend-badge neg"><span class="w-2.5 h-2.5 rounded-full bg-red-400"></span> Negatif</span>
                 </div>
             </div>
             <div class="chart-wrapper">
@@ -239,7 +243,7 @@
             <p id="chartInfo" class="text-[9px] text-center opacity-30 mt-4 uppercase tracking-widest">-</p>
         </div>
 
-        <!-- Summary Statistics Only (Top Records Cards Dihapus) -->
+        <!-- Summary Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="stat-card glass-card rounded-2xl p-4 text-center">
                 <p class="text-[9px] uppercase opacity-30 tracking-widest mb-1">Total Siswa</p>
@@ -259,10 +263,10 @@
             </div>
         </div>
         
-        <!-- Info Tambahan -->
+        <!-- Info Card -->
         <div class="glass rounded-2xl p-4 text-center">
             <p class="text-[9px] opacity-40 uppercase tracking-widest">
-                💡 <span class="opacity-60">Klik nama siswa pada view tabel untuk melihat riwayat lengkap (khusus admin)</span>
+                💡 <span class="opacity-60">Grafik menampilkan agregasi poin seluruh siswa per jurusan dalam kelas terpilih</span>
             </p>
         </div>
     </div>
@@ -401,7 +405,7 @@
                         catatan: r[8] || ''
                     }));
 
-                // Aggregate per siswa
+                // Aggregate per siswa untuk tabel
                 const aggregated = {};
                 allData.forEach(item => {
                     const key = item.nisn || item.nama;
@@ -622,55 +626,60 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // ================= 📊 ANALYTICS FUNCTIONS (MODIFIED) =================
+        // ================= 📊 ANALYTICS: KELAS → JURUSAN =================
         function renderChart() {
             if (currentView !== 'analytics') return;
             
-            // HANYA ambil filter kelas untuk analytics
             const fKelas = document.getElementById('chartFilterKelas').value;
             
-            // Filter data berdasarkan kelas saja
+            // Filter data berdasarkan kelas (jika dipilih)
             const analyticsData = fKelas 
                 ? allData.filter(item => item.kelas === fKelas)
                 : allData;
 
-            // Aggregate data per siswa untuk chart
-            const studentStats = {};
+            // 🎯 AGGREGATE BY JURUSAN (bukan per siswa)
+            const jurusanStats = {};
             analyticsData.forEach(item => {
-                const key = item.nisn || item.nama;
-                if (!studentStats[key]) {
-                    studentStats[key] = { 
-                        nama: item.nama, 
-                        kelas: item.kelas, 
-                        jurusan: item.jurusan,
+                const key = item.jurusan || 'Lainnya';
+                if (!jurusanStats[key]) {
+                    jurusanStats[key] = { 
+                        jurusan: key, 
+                        kelas: item.kelas,
                         positive: 0, 
-                        negative: 0 
+                        negative: 0,
+                        studentCount: new Set()
                     };
                 }
-                if (item.poin >= 0) studentStats[key].positive += item.poin;
-                else studentStats[key].negative += Math.abs(item.poin);
+                // Accumulate points
+                if (item.poin >= 0) jurusanStats[key].positive += item.poin;
+                else jurusanStats[key].negative += Math.abs(item.poin);
+                // Track unique students for stats
+                jurusanStats[key].studentCount.add(item.nisn || item.nama);
             });
 
-            // Prepare chart data
-            const labels = Object.values(studentStats).map(s => {
-                // Tampilkan nama singkat + kelas jika perlu
-                const names = s.nama.split(' ');
-                return names.length > 2 ? `${names[0]} ${names[names.length-1]}` : s.nama;
+            // Prepare chart data - sorted by jurusan name
+            const sortedJurusan = Object.keys(jurusanStats).sort();
+            const labels = sortedJurusan.map(j => {
+                // Format label: "TKRO" atau "X • TKRO" jika semua kelas
+                return fKelas ? j : `${jurusanStats[j].kelas} • ${j}`;
             });
-            const positiveData = Object.values(studentStats).map(s => s.positive);
-            const negativeData = Object.values(studentStats).map(s => s.negative);
+            const positiveData = sortedJurusan.map(j => jurusanStats[j].positive);
+            const negativeData = sortedJurusan.map(j => jurusanStats[j].negative);
 
             // Render Chart
-            renderChartCanvas(labels, positiveData, negativeData, fKelas || 'Semua Kelas');
+            renderChartCanvas(labels, positiveData, negativeData, fKelas || 'Semua Kelas', jurusanStats);
             
-            // Update summary statistics
+            // Update summary statistics (based on filtered data)
             updateStats(analyticsData);
             
+            // Update chart info
+            const totalJurusan = sortedJurusan.length;
+            const totalStudents = [...new Set(analyticsData.map(d => d.nisn || d.nama))].length;
             document.getElementById('chartInfo').innerText = 
-                `Data: ${fKelas ? `Kelas ${fKelas}` : 'Semua Kelas'} • ${Object.keys(studentStats).length} siswa`;
+                `${fKelas ? `Kelas ${fKelas}` : 'Semua Kelas'} • ${totalJurusan} jurusan • ${totalStudents} siswa`;
         }
 
-        function renderChartCanvas(labels, positive, negative, filterLabel) {
+        function renderChartCanvas(labels, positive, negative, filterLabel, jurusanData) {
             const ctx = document.getElementById('analyticsChart');
             if (!ctx) return;
             
@@ -687,18 +696,20 @@
                         {
                             label: 'Poin Positif',
                             data: positive,
-                            backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
                             borderColor: 'rgba(34, 197, 94, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false,
                         },
                         {
                             label: 'Poin Negatif',
                             data: negative,
-                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
                             borderColor: 'rgba(239, 68, 68, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false,
                         }
                     ]
                 },
@@ -714,8 +725,27 @@
                             borderColor: 'rgba(255,255,255,0.1)',
                             borderWidth: 1,
                             padding: 12,
+                            displayColors: true,
                             callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} poin`
+                                title: (items) => `Jurusan: ${items[0].label}`,
+                                label: (ctx) => {
+                                    const dataset = ctx.dataset.label;
+                                    const value = ctx.parsed.y;
+                                    const jurusan = labels[ctx.dataIndex];
+                                    const data = jurusanData[jurusan.replace(`${filterLabel} • `, '')] || jurusanData[jurusan];
+                                    const students = data?.studentCount?.size || 0;
+                                    return [
+                                        `${dataset}: ${value} poin`,
+                                        `Siswa: ${students} orang`
+                                    ];
+                                },
+                                afterLabel: (ctx) => {
+                                    const jurusan = labels[ctx.dataIndex];
+                                    const data = jurusanData[jurusan.replace(`${filterLabel} • `, '')] || jurusanData[jurusan];
+                                    if (!data) return '';
+                                    const net = data.positive - data.negative;
+                                    return `Net: ${net >= 0 ? '+' : ''}${net} poin`;
+                                }
                             }
                         }
                     },
@@ -724,9 +754,9 @@
                             grid: { color: gridColor, display: false },
                             ticks: { 
                                 color: textColor, 
-                                font: { size: 9, family: 'Plus Jakarta Sans' },
-                                maxRotation: 45,
-                                minRotation: 45
+                                font: { size: 10, family: 'Plus Jakarta Sans', weight: '600' },
+                                maxRotation: 0,
+                                minRotation: 0
                             }
                         },
                         y: {
@@ -734,17 +764,17 @@
                             ticks: { 
                                 color: textColor, 
                                 font: { size: 9 },
-                                callback: (val) => val >= 1000 ? (val/1000)+'k' : val
+                                callback: (val) => val >= 100 ? (val/100).toFixed(1)+'k' : val
                             },
                             beginAtZero: true
                         }
                     },
-                    animation: { duration: 600, easing: 'easeOutQuart' }
+                    animation: { duration: 700, easing: 'easeOutQuart' }
                 }
             });
         }
 
-        // ================= STATISTICS ONLY (Top Records Dihapus) =================
+        // ================= STATISTICS =================
         function updateStats(data) {
             const uniqueStudents = [...new Set(data.map(d => d.nisn || d.nama))];
             const totalPoin = data.reduce((sum, d) => sum + d.poin, 0);
@@ -752,7 +782,7 @@
             const totalNegative = Math.abs(data.filter(d => d.poin < 0).reduce((sum, d) => sum + d.poin, 0));
             const avgPoin = uniqueStudents.length > 0 ? (totalPoin / uniqueStudents.length).toFixed(1) : 0;
             
-            // Animate numbers for better UX
+            // Animate numbers
             animateStat('statTotalStudents', uniqueStudents.length, 0, 500);
             animateStat('statAvgPoin', parseFloat(avgPoin), 0, 500, true);
             animateStat('statTotalPositive', totalPositive, 0, 500);
@@ -762,19 +792,14 @@
         function animateStat(elementId, end, start = 0, duration = 500, isFloat = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            
             const startTime = performance.now();
-            const prefix = end >= 0 && isFloat ? '+' : '';
+            const prefix = (end >= 0 && isFloat) || (end > 0 && !isFloat) ? '+' : '';
             
             function update(currentTime) {
                 const progress = Math.min((currentTime - startTime) / duration, 1);
                 const easeOut = 1 - Math.pow(1 - progress, 3);
                 const current = start + (end - start) * easeOut;
-                
-                el.innerText = isFloat 
-                    ? `${prefix}${current.toFixed(1)}` 
-                    : `${prefix}${Math.round(current)}`;
-                
+                el.innerText = isFloat ? `${prefix}${current.toFixed(1)}` : `${prefix}${Math.round(current)}`;
                 if (progress < 1) requestAnimationFrame(update);
             }
             requestAnimationFrame(update);
@@ -786,9 +811,7 @@
             if (savedAdmin) {
                 currentAdmin = JSON.parse(savedAdmin);
                 performExport();
-            } else {
-                openLoginModal();
-            }
+            } else { openLoginModal(); }
         }
 
         function openLoginModal() {
@@ -799,7 +822,6 @@
             document.getElementById('adminUser').focus();
             if (window.lucide) lucide.createIcons();
         }
-
         function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
 
         async function handleAdminLogin(e) {
@@ -810,10 +832,7 @@
             const btnText = document.getElementById('loginBtnText');
             const error = document.getElementById('loginError');
 
-            btn.disabled = true;
-            btnText.innerText = 'Memverifikasi...';
-            error.classList.add('hidden');
-
+            btn.disabled = true; btnText.innerText = 'Memverifikasi...'; error.classList.add('hidden');
             if (adminAccounts.length === 0) await fetchAdminAccounts();
 
             const validAdmin = adminAccounts.find(a => a.username === user && a.password === pass && a.role === 'admin');
@@ -822,8 +841,7 @@
                 currentAdmin = { nama: validAdmin.nama, username: validAdmin.username };
                 sessionStorage.setItem('adab_admin_session', JSON.stringify(currentAdmin));
                 showToast(`Selamat datang, ${validAdmin.nama}!`);
-                closeLoginModal();
-                updateUIForAdmin();
+                closeLoginModal(); updateUIForAdmin();
                 if (currentView === 'table') renderTable();
                 if (currentView === 'analytics') renderChart();
                 performExport();
@@ -832,8 +850,7 @@
                 document.getElementById('adminPass').value = '';
                 document.getElementById('adminPass').focus();
             }
-            btn.disabled = false;
-            btnText.innerText = 'Masuk';
+            btn.disabled = false; btnText.innerText = 'Masuk';
         }
 
         function updateUIForAdmin() {
@@ -868,11 +885,8 @@
             document.getElementById('historyStudentMeta').innerText = 
                 `${nisn || 'NISN -'} • ${studentData?.kelas || '-'} • ${studentData?.jurusan || '-'}`;
             
-            modal.classList.remove('hidden');
-            loading.classList.remove('hidden');
-            content.classList.add('hidden');
-            empty.classList.add('hidden');
-            content.innerHTML = '';
+            modal.classList.remove('hidden'); loading.classList.remove('hidden');
+            content.classList.add('hidden'); empty.classList.add('hidden'); content.innerHTML = '';
 
             try {
                 const riwayat = await fetchRiwayatData();
@@ -885,13 +899,10 @@
                 }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                 countEl.innerText = `${studentRiwayat.length} Catatan Aktivitas`;
-
                 if (studentRiwayat.length === 0) {
-                    loading.classList.add('hidden');
-                    empty.classList.remove('hidden');
+                    loading.classList.add('hidden'); empty.classList.remove('hidden');
                 } else {
-                    loading.classList.add('hidden');
-                    content.classList.remove('hidden');
+                    loading.classList.add('hidden'); content.classList.remove('hidden');
                     content.innerHTML = studentRiwayat.map((r) => {
                         const poinClass = r.poin >= 0 ? 'positive' : 'negative';
                         const poinBadge = r.poin >= 0 
@@ -905,16 +916,14 @@
                                             <p class="text-[9px] font-black text-sky-400 uppercase tracking-widest mb-1">${r.kategori || 'UMUM'}</p>
                                             <h5 class="text-sm font-bold text-slate-100">${r.indikator || 'Tanpa indikator'}</h5>
                                             ${r.catatan && r.catatan !== '-' ? `<p class="text-[10px] opacity-60 mt-2 italic">"${r.catatan}"</p>` : ''}
-                                        </div>
-                                        ${poinBadge}
+                                        </div>${poinBadge}
                                     </div>
                                     <div class="flex flex-wrap items-center gap-4 pt-4 border-t border-white/5">
                                         <div class="flex items-center gap-1.5"><i data-lucide="user-check" class="w-3 h-3 opacity-40"></i><span class="text-[9px] font-bold opacity-40 uppercase">${r.guru || '-'}</span></div>
                                         <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3 h-3 opacity-40"></i><span class="text-[9px] font-bold opacity-40">${formatDate(r.timestamp)}</span></div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     }).join('');
                 }
                 if (window.lucide) lucide.createIcons();
@@ -925,7 +934,6 @@
                 content.classList.remove('hidden');
             }
         }
-
         function closeHistoryModal() { document.getElementById('historyModal').classList.add('hidden'); }
 
         // ================= EXPORT =================
@@ -967,7 +975,7 @@
             fetchData();
         }
 
-        // Close modals on outside click
+        // Close modals
         ['loginModal', 'historyModal'].forEach(id => {
             document.getElementById(id)?.addEventListener('click', (e) => {
                 if (e.target.id === id) {
@@ -976,18 +984,12 @@
                 }
             });
         });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeLoginModal(); closeHistoryModal(); }
-        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeLoginModal(); closeHistoryModal(); } });
 
         // ================= INIT =================
         window.addEventListener('DOMContentLoaded', () => {
             const saved = sessionStorage.getItem('adab_admin_session');
-            if (saved) {
-                currentAdmin = JSON.parse(saved);
-                updateUIForAdmin();
-            }
+            if (saved) { currentAdmin = JSON.parse(saved); updateUIForAdmin(); }
             fetchData();
             if (window.lucide) lucide.createIcons();
         });
