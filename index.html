@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekapitulasi Data ADAB - SMK Negeri 2 Tegalsari</title>
+    <title>Analytics ADAB - SMK Negeri 2 Tegalsari</title>
     
     <!-- PWA & Meta -->
     <link rel="manifest" href="/manifest.json">
@@ -56,10 +56,8 @@
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .animate-fade { animation: fadeIn 0.4s ease forwards; }
         .animate-slide { animation: slideIn 0.3s ease forwards; }
-        .animate-pulse-slow { animation: pulse 2s infinite; }
         
         .input-glass {
             background: rgba(0,0,0,0.3);
@@ -92,13 +90,22 @@
         .timeline-item.negative::before { background: #ef4444; }
         
         /* Chart container */
-        .chart-wrapper { position: relative; height: 300px; width: 100%; }
+        .chart-wrapper { position: relative; height: 350px; width: 100%; }
         
         /* Toggle button active state */
         .toggle-btn.active {
             background: var(--accent);
             color: #0f172a;
             box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+        }
+        
+        /* Stat card hover */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.06);
         }
     </style>
 </head>
@@ -113,7 +120,7 @@
                      class="w-8 h-8 object-contain" alt="Logo">
             </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight">Rekapitulasi Data ADAB</h1>
+                <h1 class="text-xl font-bold tracking-tight">Analytics ADAB</h1>
                 <p class="text-[10px] uppercase tracking-widest text-slate-400">SMK Negeri 2 Tegalsari</p>
             </div>
         </div>
@@ -201,19 +208,17 @@
 
     <!-- ===== VIEW: ANALYTICS ===== -->
     <div id="viewAnalytics" class="hidden space-y-6">
-        <!-- Analytics Controls -->
+        <!-- Analytics Controls - HANYA FILTER KELAS -->
         <div class="glass rounded-3xl p-5">
             <div class="flex flex-col md:flex-row justify-between items-end gap-4">
                 <div>
-                    <h3 class="text-lg font-bold tracking-tight mb-1">Visualisasi Data</h3>
-                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Filter berdasarkan kelas atau jurusan</p>
+                    <h3 class="text-lg font-bold tracking-tight mb-1">Visualisasi Data per Kelas</h3>
+                    <p class="text-[10px] uppercase tracking-widest text-slate-400">Pilih kelas untuk melihat distribusi poin</p>
                 </div>
                 <div class="flex gap-3">
-                    <select id="chartFilterKelas" onchange="renderChart()" class="input-glass rounded-2xl px-4 py-3 text-sm min-w-[150px]">
+                    <!-- Hanya filter kelas untuk analytics -->
+                    <select id="chartFilterKelas" onchange="renderChart()" class="input-glass rounded-2xl px-4 py-3 text-sm min-w-[200px]">
                         <option value="">Semua Kelas</option>
-                    </select>
-                    <select id="chartFilterJurusan" onchange="renderChart()" class="input-glass rounded-2xl px-4 py-3 text-sm min-w-[180px]">
-                        <option value="">Semua Jurusan</option>
                     </select>
                 </div>
             </div>
@@ -234,73 +239,31 @@
             <p id="chartInfo" class="text-[9px] text-center opacity-30 mt-4 uppercase tracking-widest">-</p>
         </div>
 
-        <!-- Top Records Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Highest Positive -->
-            <div class="glass-card rounded-3xl p-6 border-l-4 border-green-400">
-                <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <p class="text-[9px] font-black text-green-400 uppercase tracking-widest mb-1">🏆 Poin Positif Tertinggi</p>
-                        <h5 id="topPositiveName" class="text-lg font-bold">Memuat...</h5>
-                        <p id="topPositiveMeta" class="text-[10px] opacity-40 uppercase tracking-wider mt-1">-</p>
-                    </div>
-                    <span id="topPositiveValue" class="px-4 py-2 rounded-xl bg-green-500/20 text-green-400 text-lg font-black">+0</span>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex items-center gap-2 text-[9px] opacity-50">
-                        <i data-lucide="award" class="w-3 h-3"></i>
-                        <span id="topPositiveIndicator">-</span>
-                    </div>
-                    <p id="topPositiveNote" class="text-[10px] opacity-60 italic min-h-[40px]">-</p>
-                    <div class="flex items-center justify-between pt-3 border-t border-white/5 text-[9px] opacity-40">
-                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> <span id="topPositiveGuru">-</span></span>
-                        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> <span id="topPositiveDate">-</span></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Highest Negative (Needs Attention) -->
-            <div class="glass-card rounded-3xl p-6 border-l-4 border-red-400">
-                <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <p class="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1">⚠️ Perlu Perhatian</p>
-                        <h5 id="topNegativeName" class="text-lg font-bold">Memuat...</h5>
-                        <p id="topNegativeMeta" class="text-[10px] opacity-40 uppercase tracking-wider mt-1">-</p>
-                    </div>
-                    <span id="topNegativeValue" class="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 text-lg font-black">0</span>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex items-center gap-2 text-[9px] opacity-50">
-                        <i data-lucide="circle-alert" class="w-3 h-3"></i>
-                        <span id="topNegativeIndicator">-</span>
-                    </div>
-                    <p id="topNegativeNote" class="text-[10px] opacity-60 italic min-h-[40px]">-</p>
-                    <div class="flex items-center justify-between pt-3 border-t border-white/5 text-[9px] opacity-40">
-                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> <span id="topNegativeGuru">-</span></span>
-                        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> <span id="topNegativeDate">-</span></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Summary Stats -->
+        <!-- Summary Statistics Only (Top Records Cards Dihapus) -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="glass-card rounded-2xl p-4 text-center">
+            <div class="stat-card glass-card rounded-2xl p-4 text-center">
                 <p class="text-[9px] uppercase opacity-30 tracking-widest mb-1">Total Siswa</p>
                 <p id="statTotalStudents" class="text-2xl font-black">-</p>
             </div>
-            <div class="glass-card rounded-2xl p-4 text-center">
+            <div class="stat-card glass-card rounded-2xl p-4 text-center">
                 <p class="text-[9px] uppercase opacity-30 tracking-widest mb-1">Rata-rata Poin</p>
                 <p id="statAvgPoin" class="text-2xl font-black text-sky-400">-</p>
             </div>
-            <div class="glass-card rounded-2xl p-4 text-center">
+            <div class="stat-card glass-card rounded-2xl p-4 text-center">
                 <p class="text-[9px] uppercase opacity-30 tracking-widest mb-1">Poin Positif</p>
                 <p id="statTotalPositive" class="text-2xl font-black text-green-400">-</p>
             </div>
-            <div class="glass-card rounded-2xl p-4 text-center">
+            <div class="stat-card glass-card rounded-2xl p-4 text-center">
                 <p class="text-[9px] uppercase opacity-30 tracking-widest mb-1">Poin Negatif</p>
                 <p id="statTotalNegative" class="text-2xl font-black text-red-400">-</p>
             </div>
+        </div>
+        
+        <!-- Info Tambahan -->
+        <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-[9px] opacity-40 uppercase tracking-widest">
+                💡 <span class="opacity-60">Klik nama siswa pada view tabel untuk melihat riwayat lengkap (khusus admin)</span>
+            </p>
         </div>
     </div>
 
@@ -392,7 +355,7 @@
         let riwayatCache = null;
         let currentAdmin = null;
         let currentPage = 1;
-        let currentView = 'table'; // 'table' or 'analytics'
+        let currentView = 'table';
         let analyticsChart = null;
         const ITEMS_PER_PAGE = 25;
 
@@ -459,7 +422,7 @@
                     renderTable();
                     document.getElementById('loadingState')?.classList.add('hidden');
                 } else {
-                    renderAnalytics();
+                    renderChart();
                 }
                 
             } catch (err) {
@@ -524,13 +487,15 @@
             const uniqueKelas = [...new Set(allData.map(d => d.kelas).filter(Boolean))].sort();
             const uniqueJurusan = [...new Set(allData.map(d => d.jurusan).filter(Boolean))].sort();
             
+            // Filter untuk tabel (kelas + jurusan)
             const optionsKelas = '<option value="">Semua Kelas</option>' + uniqueKelas.map(k => `<option value="${k}">${k}</option>`).join('');
             const optionsJurusan = '<option value="">Semua Jurusan</option>' + uniqueJurusan.map(j => `<option value="${j}">${j}</option>`).join('');
             
             document.getElementById('filterKelas').innerHTML = optionsKelas;
             document.getElementById('filterJurusan').innerHTML = optionsJurusan;
+            
+            // Filter untuk analytics (HANYA KELAS)
             document.getElementById('chartFilterKelas').innerHTML = optionsKelas;
-            document.getElementById('chartFilterJurusan').innerHTML = optionsJurusan;
         }
 
         function filterTable() {
@@ -569,17 +534,13 @@
         // ================= VIEW TOGGLE =================
         function switchView(view) {
             currentView = view;
-            
-            // Update toggle buttons
             document.getElementById('btnViewTable').classList.toggle('active', view === 'table');
             document.getElementById('btnViewAnalytics').classList.toggle('active', view === 'analytics');
-            
-            // Show/hide views
             document.getElementById('viewTable').classList.toggle('hidden', view !== 'table');
             document.getElementById('viewAnalytics').classList.toggle('hidden', view !== 'analytics');
             
             if (view === 'analytics') {
-                renderAnalytics();
+                renderChart();
             }
         }
 
@@ -591,7 +552,6 @@
             const thAksi = document.getElementById('thAksi');
             
             if (currentView !== 'table') return;
-            
             thAksi?.classList.toggle('hidden', !currentAdmin);
             
             if (filteredData.length === 0) {
@@ -642,7 +602,6 @@
         function renderPagination(total) {
             const container = document.getElementById('pagination');
             if (!container || total <= 1) { if(container) container.innerHTML = ''; return; }
-            
             let html = '';
             html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-white/10"'} 
                      class="glass px-3 py-2 rounded-lg text-[10px] font-bold">‹</button>`;
@@ -663,57 +622,60 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // ================= 📊 ANALYTICS FUNCTIONS =================
-        function renderAnalytics() {
+        // ================= 📊 ANALYTICS FUNCTIONS (MODIFIED) =================
+        function renderChart() {
             if (currentView !== 'analytics') return;
             
+            // HANYA ambil filter kelas untuk analytics
             const fKelas = document.getElementById('chartFilterKelas').value;
-            const fJurusan = document.getElementById('chartJurusan')?.value || '';
             
-            // Filter data for analytics
-            const analyticsData = allData.filter(item => {
-                const matchKelas = !fKelas || item.kelas === fKelas;
-                const matchJurusan = !fJurusan || item.jurusan === fJurusan;
-                return matchKelas && matchJurusan;
-            });
+            // Filter data berdasarkan kelas saja
+            const analyticsData = fKelas 
+                ? allData.filter(item => item.kelas === fKelas)
+                : allData;
 
-            // Aggregate by class/jurusan for chart
-            const chartData = {};
+            // Aggregate data per siswa untuk chart
+            const studentStats = {};
             analyticsData.forEach(item => {
-                const key = fJurusan ? item.kelas : (fKelas ? item.jurusan : `${item.kelas} ${item.jurusan}`);
-                if (!chartData[key]) {
-                    chartData[key] = { positive: 0, negative: 0, count: 0 };
+                const key = item.nisn || item.nama;
+                if (!studentStats[key]) {
+                    studentStats[key] = { 
+                        nama: item.nama, 
+                        kelas: item.kelas, 
+                        jurusan: item.jurusan,
+                        positive: 0, 
+                        negative: 0 
+                    };
                 }
-                if (item.poin >= 0) chartData[key].positive += item.poin;
-                else chartData[key].negative += Math.abs(item.poin);
-                chartData[key].count++;
+                if (item.poin >= 0) studentStats[key].positive += item.poin;
+                else studentStats[key].negative += Math.abs(item.poin);
             });
 
-            const labels = Object.keys(chartData).sort();
-            const positiveData = labels.map(l => chartData[l].positive);
-            const negativeData = labels.map(l => chartData[l].negative);
+            // Prepare chart data
+            const labels = Object.values(studentStats).map(s => {
+                // Tampilkan nama singkat + kelas jika perlu
+                const names = s.nama.split(' ');
+                return names.length > 2 ? `${names[0]} ${names[names.length-1]}` : s.nama;
+            });
+            const positiveData = Object.values(studentStats).map(s => s.positive);
+            const negativeData = Object.values(studentStats).map(s => s.negative);
 
             // Render Chart
-            renderChartCanvas(labels, positiveData, negativeData, fKelas || fJurusan || 'Semua');
+            renderChartCanvas(labels, positiveData, negativeData, fKelas || 'Semua Kelas');
             
-            // Find top records from filtered data
-            findTopRecords(analyticsData);
-            
-            // Update summary stats
+            // Update summary statistics
             updateStats(analyticsData);
             
             document.getElementById('chartInfo').innerText = 
-                `Data berdasarkan: ${fKelas || fJurusan ? (fKelas ? `Kelas ${fKelas}` : `Jurusan ${fJurusan}`) : 'Semua Data'}`;
+                `Data: ${fKelas ? `Kelas ${fKelas}` : 'Semua Kelas'} • ${Object.keys(studentStats).length} siswa`;
         }
 
         function renderChartCanvas(labels, positive, negative, filterLabel) {
             const ctx = document.getElementById('analyticsChart');
             if (!ctx) return;
             
-            // Destroy existing chart
             if (analyticsChart) analyticsChart.destroy();
             
-            const isDark = true;
             const gridColor = 'rgba(255, 255, 255, 0.1)';
             const textColor = 'rgba(255, 255, 255, 0.6)';
             
@@ -752,7 +714,6 @@
                             borderColor: 'rgba(255,255,255,0.1)',
                             borderWidth: 1,
                             padding: 12,
-                            displayColors: true,
                             callbacks: {
                                 label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} poin`
                             }
@@ -778,57 +739,12 @@
                             beginAtZero: true
                         }
                     },
-                    animation: { duration: 800, easing: 'easeOutQuart' }
+                    animation: { duration: 600, easing: 'easeOutQuart' }
                 }
             });
         }
 
-        function findTopRecords(data) {
-            // Filter out entries without catatan or with '-'
-            const withNotes = data.filter(d => d.catatan && d.catatan !== '-' && d.catatan.trim());
-            
-            // Highest Positive
-            const positives = withNotes.filter(d => d.poin > 0).sort((a,b) => b.poin - a.poin);
-            const topPos = positives[0];
-            if (topPos) {
-                document.getElementById('topPositiveName').innerText = topPos.nama;
-                document.getElementById('topPositiveMeta').innerText = `${topPos.kelas} • ${topPos.jurusan}`;
-                document.getElementById('topPositiveValue').innerText = `+${topPos.poin}`;
-                document.getElementById('topPositiveIndicator').innerText = topPos.indikator || '-';
-                document.getElementById('topPositiveNote').innerText = `"${topPos.catatan}"`;
-                document.getElementById('topPositiveGuru').innerText = topPos.guru || '-';
-                document.getElementById('topPositiveDate').innerText = formatDate(topPos.timestamp);
-            } else {
-                resetTopCard('positive');
-            }
-            
-            // Highest Negative (most negative = lowest value)
-            const negatives = withNotes.filter(d => d.poin < 0).sort((a,b) => a.poin - b.poin);
-            const topNeg = negatives[0];
-            if (topNeg) {
-                document.getElementById('topNegativeName').innerText = topNeg.nama;
-                document.getElementById('topNegativeMeta').innerText = `${topNeg.kelas} • ${topNeg.jurusan}`;
-                document.getElementById('topNegativeValue').innerText = topNeg.poin;
-                document.getElementById('topNegativeIndicator').innerText = topNeg.indikator || '-';
-                document.getElementById('topNegativeNote').innerText = `"${topNeg.catatan}"`;
-                document.getElementById('topNegativeGuru').innerText = topNeg.guru || '-';
-                document.getElementById('topNegativeDate').innerText = formatDate(topNeg.timestamp);
-            } else {
-                resetTopCard('negative');
-            }
-        }
-
-        function resetTopCard(type) {
-            const prefix = type === 'positive' ? 'topPositive' : 'topNegative';
-            document.getElementById(`${prefix}Name`).innerText = '-';
-            document.getElementById(`${prefix}Meta`).innerText = '-';
-            document.getElementById(`${prefix}Value`).innerText = type === 'positive' ? '+0' : '0';
-            document.getElementById(`${prefix}Indicator`).innerText = '-';
-            document.getElementById(`${prefix}Note`).innerText = 'Belum ada data';
-            document.getElementById(`${prefix}Guru`).innerText = '-';
-            document.getElementById(`${prefix}Date`).innerText = '-';
-        }
-
+        // ================= STATISTICS ONLY (Top Records Dihapus) =================
         function updateStats(data) {
             const uniqueStudents = [...new Set(data.map(d => d.nisn || d.nama))];
             const totalPoin = data.reduce((sum, d) => sum + d.poin, 0);
@@ -836,10 +752,32 @@
             const totalNegative = Math.abs(data.filter(d => d.poin < 0).reduce((sum, d) => sum + d.poin, 0));
             const avgPoin = uniqueStudents.length > 0 ? (totalPoin / uniqueStudents.length).toFixed(1) : 0;
             
-            document.getElementById('statTotalStudents').innerText = uniqueStudents.length;
-            document.getElementById('statAvgPoin').innerText = avgPoin >= 0 ? `+${avgPoin}` : avgPoin;
-            document.getElementById('statTotalPositive').innerText = `+${totalPositive}`;
-            document.getElementById('statTotalNegative').innerText = `-${totalNegative}`;
+            // Animate numbers for better UX
+            animateStat('statTotalStudents', uniqueStudents.length, 0, 500);
+            animateStat('statAvgPoin', parseFloat(avgPoin), 0, 500, true);
+            animateStat('statTotalPositive', totalPositive, 0, 500);
+            animateStat('statTotalNegative', totalNegative, 0, 500);
+        }
+
+        function animateStat(elementId, end, start = 0, duration = 500, isFloat = false) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            const startTime = performance.now();
+            const prefix = end >= 0 && isFloat ? '+' : '';
+            
+            function update(currentTime) {
+                const progress = Math.min((currentTime - startTime) / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = start + (end - start) * easeOut;
+                
+                el.innerText = isFloat 
+                    ? `${prefix}${current.toFixed(1)}` 
+                    : `${prefix}${Math.round(current)}`;
+                
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
         }
 
         // ================= 🔐 LOGIN SYSTEM =================
@@ -887,7 +825,7 @@
                 closeLoginModal();
                 updateUIForAdmin();
                 if (currentView === 'table') renderTable();
-                if (currentView === 'analytics') renderAnalytics();
+                if (currentView === 'analytics') renderChart();
                 performExport();
             } else {
                 error.classList.remove('hidden');
