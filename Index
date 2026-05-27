@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekapitulasi Data ADAB - SMK Negeri 2 Tegalsari</title>
+    
+    <!-- PWA & Meta -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- Tailwind & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #38bdf8;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #020617;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(129, 140, 248, 0.1) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .table-row:hover { background: rgba(255,255,255,0.05); }
+        .scrollbar-hide::-webkit-scrollbar { width: 4px; }
+        .scrollbar-hide::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease forwards; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <!-- Header -->
+    <header class="glass rounded-3xl p-5 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center">
+                <img src="https://lh3.googleusercontent.com/d/15zyF01OHtEgTl8p6bvEkz7xw30ByE2en" 
+                     onerror="this.src='https://placehold.co/48x48/1e293b/4facfe?text=ADAB'"
+                     class="w-8 h-8 object-contain" alt="Logo">
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Rekapitulasi Data Penilaian ADAB</h1>
+                <p class="text-[10px] uppercase tracking-widest text-slate-400">SMK Negeri 2 Tegalsari</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="refreshData()" class="glass px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-white/10 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+            </button>
+            <button onclick="exportToExcel()" class="bg-sky-500/20 text-sky-300 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-sky-500/30 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+            </button>
+        </div>
+    </header>
+
+    <!-- Controls -->
+    <div class="glass rounded-3xl p-5 mb-6">
+        <div class="flex flex-col md:flex-row gap-4">
+            <!-- Search -->
+            <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40"></i>
+                <input type="text" id="searchInput" oninput="filterTable()" 
+                       class="w-full bg-black/30 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-sky-400 transition"
+                       placeholder="Cari nama, NISN, kelas, atau indikator...">
+            </div>
+            <!-- Filter Kelas -->
+            <select id="filterKelas" onchange="filterTable()" 
+                    class="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-sky-400 transition min-w-[150px]">
+                <option value="">Semua Kelas</option>
+            </select>
+            <!-- Filter Jurusan -->
+            <select id="filterJurusan" onchange="filterTable()" 
+                    class="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-sky-400 transition min-w-[180px]">
+                <option value="">Semua Jurusan</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="glass rounded-3xl overflow-hidden">
+        <div class="overflow-x-auto scrollbar-hide">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <th class="px-5 py-4">No</th>
+                        <th class="px-5 py-4">NISN</th>
+                        <th class="px-5 py-4">Nama Lengkap</th>
+                        <th class="px-5 py-4">Kelas</th>
+                        <th class="px-5 py-4">Jurusan</th>
+                        <th class="px-5 py-4 text-right">Total Poin</th>
+                        <th class="px-5 py-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-white/5 text-sm">
+                    <!-- Data will be injected here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Loading & Empty States -->
+        <div id="loadingState" class="py-16 text-center">
+            <div class="flex justify-center gap-1.5 mb-4">
+                <div class="w-2 h-2 bg-sky-400 rounded-full animate-bounce"></div>
+                <div class="w-2 h-2 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div class="w-2 h-2 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            </div>
+            <p class="text-[10px] uppercase opacity-40 tracking-widest font-bold">Memuat Data dari Google Sheets...</p>
+        </div>
+        <div id="emptyState" class="hidden py-16 text-center opacity-40">
+            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+            <p class="text-[10px] font-bold uppercase tracking-widest">Tidak ada data yang ditemukan</p>
+        </div>
+    </div>
+
+    <!-- Pagination Info -->
+    <div class="flex justify-between items-center mt-4 px-2">
+        <p id="infoText" class="text-[10px] font-bold uppercase opacity-30 tracking-widest">Memuat...</p>
+        <div class="flex gap-2" id="pagination"></div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass w-full max-w-2xl rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto animate-fade">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xl font-bold">Riwayat Penilaian</h3>
+                    <p id="modalStudentInfo" class="text-[10px] uppercase tracking-widest text-slate-400 mt-1">-</p>
+                </div>
+                <button onclick="closeDetailModal()" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 glass px-5 py-4 rounded-2xl flex items-center gap-3 z-[100] translate-x-[150%] transition-transform duration-300">
+        <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+        <div>
+            <p id="toastMessage" class="text-sm font-medium"></p>
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi
+        const CONFIG = {
+            sheetId: '1baNd7ocNwJCs-BFiIj36hapP75OJOa8ZboIpjhh3SIk',
+            gid: '167808340',
+            csvUrl: 'https://docs.google.com/spreadsheets/d/1baNd7ocNwJCs-BFiIj36hapP75OJOa8ZboIpjhh3SIk/export?format=csv&gid=167808340'
+        };
+
+        let allData = [];
+        let filteredData = [];
+        let uniqueKelas = [];
+        let uniqueJurusan = [];
+        const ITEMS_PER_PAGE = 25;
+        let currentPage = 1;
+
+        // CSV Parser yang robust
+        function parseCSV(text) {
+            const rows = [];
+            const lines = text.split(/\r?\n/);
+            for (let line of lines) {
+                if (!line.trim()) continue;
+                const cols = [];
+                let cur = '', inQ = false;
+                for (let i = 0; i < line.length; i++) {
+                    const c = line[i];
+                    if (c === '"') inQ = !inQ;
+                    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+                    else cur += c;
+                }
+                cols.push(cur.trim());
+                rows.push(cols);
+            }
+            return rows;
+        }
+
+        // Fetch & Process Data
+        async function fetchData() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('tableBody').innerHTML = '';
+            
+            try {
+                const res = await fetch(CONFIG.csvUrl + '&t=' + Date.now());
+                const csv = await res.text();
+                const rows = parseCSV(csv);
+                
+                // Header: [Timestamp, NISN, Nama, Kelas, Jurusan, Poin, Indikator, Guru, Catatan]
+                allData = rows.slice(1)
+                    .filter(r => r[2]?.trim()) // Filter baris dengan nama
+                    .map(r => ({
+                        timestamp: r[0] || '',
+                        nisn: (r[1] || '').replace(/^'+/, ''),
+                        nama: r[2] || '',
+                        kelas: r[3] || '',
+                        jurusan: r[4] || '',
+                        poin: parseFloat(r[5]) || 0,
+                        indikator: r[6] || '',
+                        guru: r[7] || '',
+                        catatan: r[8] || ''
+                    }));
+
+                // Aggregate data per siswa
+                const aggregated = {};
+                allData.forEach(item => {
+                    const key = item.nisn || item.nama;
+                    if (!aggregated[key]) {
+                        aggregated[key] = {
+                            nisn: item.nisn,
+                            nama: item.nama,
+                            kelas: item.kelas,
+                            jurusan: item.jurusan,
+                            totalPoin: 0,
+                            riwayat: []
+                        };
+                    }
+                    aggregated[key].totalPoin += item.poin;
+                    aggregated[key].riwayat.push(item);
+                });
+
+                filteredData = Object.values(aggregated);
+                extractFilters();
+                renderTable();
+                
+                document.getElementById('loadingState').classList.add('hidden');
+                showToast('Data berhasil dimuat!');
+                
+            } catch (err) {
+                console.error('Fetch error:', err);
+                document.getElementById('loadingState').innerHTML = 
+                    `<p class="text-red-400 text-xs font-bold uppercase tracking-widest">Gagal memuat data.<br><span class="opacity-50">Periksa koneksi internet Anda.</span></p>`;
+                showToast('Gagal memuat data', 'error');
+            }
+        }
+
+        // Extract unique values for filters
+        function extractFilters() {
+            uniqueKelas = [...new Set(filteredData.map(d => d.kelas).filter(Boolean))].sort();
+            uniqueJurusan = [...new Set(filteredData.map(d => d.jurusan).filter(Boolean))].sort();
+            
+            const selKelas = document.getElementById('filterKelas');
+            const selJurusan = document.getElementById('filterJurusan');
+            
+            selKelas.innerHTML = '<option value="">Semua Kelas</option>' + 
+                uniqueKelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            selJurusan.innerHTML = '<option value="">Semua Jurusan</option>' + 
+                uniqueJurusan.map(j => `<option value="${j}">${j}</option>`).join('');
+        }
+
+        // Filter & Search Logic
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const fKelas = document.getElementById('filterKelas').value;
+            const fJurusan = document.getElementById('filterJurusan').value;
+
+            filteredData = allData
+                .filter(item => {
+                    const matchSearch = !query || 
+                        item.nama.toLowerCase().includes(query) ||
+                        item.nisn.includes(query) ||
+                        item.indikator?.toLowerCase().includes(query) ||
+                        item.kelas.toLowerCase().includes(query);
+                    const matchKelas = !fKelas || item.kelas === fKelas;
+                    const matchJurusan = !fJurusan || item.jurusan === fJurusan;
+                    return matchSearch && matchKelas && matchJurusan;
+                })
+                .reduce((acc, item) => {
+                    const key = item.nisn || item.nama;
+                    if (!acc[key]) {
+                        acc[key] = {
+                            nisn: item.nisn, nama: item.nama, kelas: item.kelas, 
+                            jurusan: item.jurusan, totalPoin: 0, riwayat: []
+                        };
+                    }
+                    acc[key].totalPoin += item.poin;
+                    acc[key].riwayat.push(item);
+                    return acc;
+                }, {});
+            
+            filteredData = Object.values(filteredData);
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Render Table with Pagination
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            const infoText = document.getElementById('infoText');
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                infoText.innerText = 'Hasil: 0 data';
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const pageData = filteredData.slice(start, start + ITEMS_PER_PAGE);
+            const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+
+            tbody.innerHTML = pageData.map((d, idx) => {
+                const poinClass = d.totalPoin >= 0 ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
+                return `
+                    <tr class="table-row transition-colors animate-fade" style="animation-delay: ${idx * 30}ms">
+                        <td class="px-5 py-4 text-[10px] opacity-40 font-mono">${start + idx + 1}</td>
+                        <td class="px-5 py-4 text-[10px] text-sky-400 font-semibold">${d.nisn || '-'}</td>
+                        <td class="px-5 py-4 font-medium">${d.nama}</td>
+                        <td class="px-5 py-4 text-[10px] uppercase tracking-wide opacity-70">${d.kelas}</td>
+                        <td class="px-5 py-4 text-[10px] uppercase tracking-wide opacity-70">${d.jurusan}</td>
+                        <td class="px-5 py-4 text-right">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-black ${poinClass}">
+                                ${d.totalPoin > 0 ? '+' : ''}${d.totalPoin}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            <button onclick="showDetail('${(d.nisn||'').replace(/'/g,"\\'")}', '${d.nama.replace(/'/g,"\\'")}')" 
+                                    class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition flex items-center justify-center mx-auto">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            infoText.innerText = `Menampilkan ${start + 1}-${Math.min(start + ITEMS_PER_PAGE, filteredData.length)} dari ${filteredData.length} data`;
+            renderPagination(totalPages);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Pagination Controls
+        function renderPagination(total) {
+            const container = document.getElementById('pagination');
+            if (total <= 1) { container.innerHTML = ''; return; }
+            
+            let html = '';
+            // Prev
+            html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-white/10"'} 
+                     class="glass px-3 py-2 rounded-lg text-[10px] font-bold">‹</button>`;
+            
+            // Pages
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(total, currentPage + 2); i++) {
+                html += `<button onclick="changePage(${i})" ${i === currentPage ? 'class="bg-sky-500 text-slate-900"' : 'class="hover:bg-white/10"'}
+                         class="px-3 py-2 rounded-lg text-[10px] font-bold transition">${i}</button>`;
+            }
+            
+            // Next
+            html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === total ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-white/10"'}
+                     class="glass px-3 py-2 rounded-lg text-[10px] font-bold">›</button>`;
+            
+            container.innerHTML = html;
+        }
+
+        function changePage(page) {
+            const total = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+            if (page < 1 || page > total) return;
+            currentPage = page;
+            renderTable();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show Detail Modal
+        function showDetail(nisn, nama) {
+            const student = allData.filter(d => d.nisn === nisn || d.nama === nama);
+            if (!student.length) return;
+
+            document.getElementById('modalStudentInfo').innerText = 
+                `${nisn || 'NISN -'} • ${student[0].kelas} • ${student[0].jurusan}`;
+            
+            document.getElementById('modalContent').innerHTML = student
+                .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map((r, i) => {
+                    const poinClass = r.poin >= 0 ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10';
+                    return `
+                        <div class="glass p-4 rounded-2xl border border-white/5">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <p class="text-[9px] font-black text-sky-400 uppercase tracking-widest">${r.indikator || 'UMUM'}</p>
+                                    <p class="text-sm font-medium mt-1">${r.catatan !== '-' ? r.catatan : 'Tanpa catatan tambahan'}</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg text-[9px] font-black ${poinClass}">
+                                    ${r.poin > 0 ? '+' : ''}${r.poin}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-4 text-[9px] opacity-40 uppercase tracking-wider">
+                                <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${r.guru}</span>
+                                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${formatDate(r.timestamp)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Utility Functions
+        function formatDate(ts) {
+            if (!ts) return '-';
+            const d = new Date(ts);
+            return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const message = document.getElementById('toastMessage');
+            
+            message.innerText = msg;
+            icon.setAttribute('data-lucide', type === 'error' ? 'alert-circle' : 'check-circle');
+            icon.className = `w-5 h-5 ${type === 'error' ? 'text-red-400' : 'text-green-400'}`;
+            
+            toast.classList.remove('translate-x-[150%]');
+            setTimeout(() => toast.classList.add('translate-x-[150%]'), 3000);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function refreshData() {
+            showToast('Memperbarui data...');
+            fetchData();
+        }
+
+        function exportToExcel() {
+            if (!filteredData.length) { showToast('Tidak ada data untuk diekspor', 'error'); return; }
+            
+            const ws = XLSX.utils.json_to_sheet(filteredData.map(d => ({
+                'NISN': d.nisn, 'Nama': d.nama, 'Kelas': d.kelas, 
+                'Jurusan': d.jurusan, 'Total Poin': d.totalPoin
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Data ADAB');
+            XLSX.writeFile(wb, `ADAB_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast('File berhasil diunduh!');
+        }
+
+        // Close modal on outside click
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') closeDetailModal();
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Auto-refresh every 5 minutes (optional)
+        // setInterval(fetchData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
